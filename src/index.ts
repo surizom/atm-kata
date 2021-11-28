@@ -4,29 +4,33 @@ const AVAILABLE_BILLS: number[] = Object.keys(AVAILABLE_BILLS_OBJECT).map((bill)
 
 type AvailableBill = keyof typeof AVAILABLE_BILLS_OBJECT;
 
-type DistributedBills = Partial<Record<AvailableBill, number>>;
+type DistributedBills = Record<AvailableBill, number>;
 
 type DistributionState = {
   distributedBills: DistributedBills;
   remainingAmount: number;
 };
 
-const distributeAmountWithDescendingBillValue = (
-  previous: DistributionState,
+const canDistribute = (amount: number, billType: AvailableBill) => amount >= billType;
+
+const distributeAmount = (
+  currentDistribution: DistributionState,
   currentBillType: AvailableBill
 ): DistributionState => {
-  if (previous.remainingAmount >= currentBillType) {
+  if (canDistribute(currentDistribution.remainingAmount, currentBillType)) {
+    const distributedBills = currentDistribution.remainingAmount % currentBillType;
+
     return {
       distributedBills: {
-        [currentBillType]: previous.remainingAmount % currentBillType,
-        ...previous.distributedBills,
+        [currentBillType]: distributedBills,
+        ...currentDistribution.distributedBills,
       },
-      remainingAmount: previous.remainingAmount - currentBillType * (previous.remainingAmount % currentBillType),
+      remainingAmount: currentDistribution.remainingAmount - currentBillType * distributedBills,
     };
   } else {
     return {
-      distributedBills: previous.distributedBills,
-      remainingAmount: previous.remainingAmount,
+      distributedBills: currentDistribution.distributedBills,
+      remainingAmount: currentDistribution.remainingAmount,
     };
   }
 };
@@ -39,10 +43,7 @@ export const atm = (requestedAmount: number): DistributedBills => {
     remainingAmount: requestedAmount,
   };
 
-  const distributionState = AVAILABLE_BILLS.reduce<DistributionState>(
-    distributeAmountWithDescendingBillValue,
-    initialState
-  );
+  const distribution = AVAILABLE_BILLS.reduce<DistributionState>(distributeAmount, initialState);
 
-  return distributionState.distributedBills;
+  return distribution.distributedBills;
 };
