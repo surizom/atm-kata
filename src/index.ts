@@ -11,14 +11,17 @@ type DistributionState = {
   remainingAmount: number;
 };
 
-const reduceAmount = (previous: DistributionState, currentBillType: AvailableBill): DistributionState => {
+const distributeAmountWithDescendingBillValue = (
+  previous: DistributionState,
+  currentBillType: AvailableBill
+): DistributionState => {
   if (previous.remainingAmount >= currentBillType) {
     return {
       distributedBills: {
-        ...previous.distributedBills,
         [currentBillType]: previous.remainingAmount % currentBillType,
+        ...previous.distributedBills,
       },
-      remainingAmount: previous.remainingAmount - (previous.remainingAmount % currentBillType),
+      remainingAmount: previous.remainingAmount - currentBillType * (previous.remainingAmount % currentBillType),
     };
   } else {
     return {
@@ -36,7 +39,10 @@ export const atm = (requestedAmount: number): DistributedBills => {
     remainingAmount: requestedAmount,
   };
 
-  const truc = AVAILABLE_BILLS.reduce<DistributionState>(reduceAmount, initialState);
+  const distributionState = AVAILABLE_BILLS.reduce<DistributionState>(
+    distributeAmountWithDescendingBillValue,
+    initialState
+  );
 
-  return truc.distributedBills;
+  return distributionState.distributedBills;
 };
