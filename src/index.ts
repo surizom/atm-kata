@@ -11,38 +11,26 @@ type DistributionState = {
   remainingAmount: number;
 };
 
-const canDistribute = (amount: number, billType: AvailableBill) => amount >= billType;
+export const INITIAL_DISTRIBUTION: DistributedBills = { 10: 0, 20: 0, 50: 0, 100: 0, 200: 0, 500: 0 };
 
-const euclidianDivision = (n: number, quotient: number) => {
-  const reste = n % quotient;
+const distributeBills = ({ remainingAmount, distributedBills }: DistributionState): DistributionState => {
+  if (remainingAmount === 0) {
+    return {
+      distributedBills,
+      remainingAmount,
+    };
+  }
 
-  return (n - reste) / quotient;
-};
+  const billToDistribute = AVAILABLE_BILLS.find((bill) => bill <= remainingAmount);
 
-const distributeAmount = (
-  currentDistribution: DistributionState,
-  currentBillType: AvailableBill
-): DistributionState => {
-  const distributedBillsForCurrentBill = euclidianDivision(currentDistribution.remainingAmount, currentBillType);
-
-  return {
+  return distributeBills({
     distributedBills: {
-      ...currentDistribution.distributedBills,
-      [currentBillType]: distributedBillsForCurrentBill,
+      ...distributedBills,
+      [billToDistribute]: distributedBills[billToDistribute] + 1,
     },
-    remainingAmount: currentDistribution.remainingAmount - currentBillType * distributedBillsForCurrentBill,
-  };
+    remainingAmount: remainingAmount - billToDistribute,
+  });
 };
 
-export const initialDistribution: DistributedBills = { 10: 0, 20: 0, 50: 0, 100: 0, 200: 0, 500: 0 };
-
-export const atm = (requestedAmount: number): DistributedBills => {
-  const initialState: DistributionState = {
-    distributedBills: initialDistribution,
-    remainingAmount: requestedAmount,
-  };
-
-  const distribution = AVAILABLE_BILLS.reduce<DistributionState>(distributeAmount, initialState);
-
-  return distribution.distributedBills;
-};
+export const atm = (requestedAmount: number) =>
+  distributeBills({ remainingAmount: requestedAmount, distributedBills: INITIAL_DISTRIBUTION }).distributedBills;
